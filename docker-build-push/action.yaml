@@ -1,0 +1,36 @@
+name: Docker Build & Push to ECR
+description: Builds and pushes a Docker image to AWS ECR using the commit SHA as the tag.
+
+inputs:
+  image-name:
+    description: Name of the ECR repository (e.g. qrify-web-dev)
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Configure AWS credentials from OIDC
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Log in to Amazon ECR
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Set image tag from commit SHA
+      id: tag
+      shell: bash
+      run: echo "TAG=${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
+
+    - name: Build Docker image
+      shell: bash
+      run: |
+        echo "Building image: ${{ env.ECR_REGISTRY }}/${{ inputs.image-name }}:${{ steps.tag.outputs.TAG }}"
+        docker build -t ${{ env.ECR_REGISTRY }}/${{ inputs.image-name }}:${{ steps.tag.outputs.TAG }} .
+
+    - name: Push Docker image
+      shell: bash
+      run: |
+        echo "Pushing image to: ${{ env.ECR_REGISTRY }}/${{ inputs.image-name }}:${{ steps.tag.outputs.TAG }}"
+        docker push ${{ env.ECR_REGISTRY }}/${{ inputs.image-name }}:${{ steps.tag.outputs.TAG }}
