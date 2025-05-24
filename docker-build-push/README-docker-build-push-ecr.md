@@ -11,7 +11,7 @@ This composite GitHub Action builds a Docker image from the current repository a
 In your workflow:
 
 ```yaml
-- uses: QRify-platform/github-actions/docker-build-push@main
+- uses: QRify-platform/github-actions/docker-build-push@mv1
   with:
     image-name: qrify-web-dev
 ```
@@ -68,7 +68,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Build and push to ECR
-        uses: QRify-platform/github-actions/docker-build-push@main
+        uses: QRify-platform/github-actions/docker-build-push@v1
         with:
           image-name: qrify-web-dev
 ```

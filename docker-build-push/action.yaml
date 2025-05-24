@@ -25,12 +25,18 @@ runs:
 
     - name: Build Docker image
       shell: bash
+      env:
+        ECR_REGISTRY: ${{ env.ECR_REGISTRY }}
+        TAG: ${{ steps.tag.outputs.TAG }}
       run: |
-        echo "Building image: ${{ env.ECR_REGISTRY }}/${{ inputs.image-name }}:${{ steps.tag.outputs.TAG }}"
-        docker build -t ${{ env.ECR_REGISTRY }}/${{ inputs.image-name }}:${{ steps.tag.outputs.TAG }} .
+        echo "Building image: $ECR_REGISTRY/${{ inputs.image-name }}:$TAG"
+        docker build -t $ECR_REGISTRY/${{ inputs.image-name }}:$TAG .
 
     - name: Push Docker image
       shell: bash
+      env:
+        ECR_REGISTRY: ${{ env.ECR_REGISTRY }}
+        TAG: ${{ steps.tag.outputs.TAG }}
       run: |
-        echo "Pushing image to: ${{ env.ECR_REGISTRY }}/${{ inputs.image-name }}:${{ steps.tag.outputs.TAG }}"
-        docker push ${{ env.ECR_REGISTRY }}/${{ inputs.image-name }}:${{ steps.tag.outputs.TAG }}
+        echo "Pushing image to: $ECR_REGISTRY/${{ inputs.image-name }}:$TAG"
+        docker push $ECR_REGISTRY/${{ inputs.image-name }}:$TAG
