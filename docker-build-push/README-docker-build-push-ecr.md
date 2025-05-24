@@ -78,12 +78,6 @@ jobs:
 ## 🏷 Image Tag Format
 
 This action automatically tags images using the **first 8 characters** of the commit SHA:
-
-```text
-<ecr_registry>/<repo>:<commit-sha>
-e.g. 123456789012.dkr.ecr.us-east-1.amazonaws.com/qrify-web-dev:abc12345
-```
-
 ---
 
 ## 🧱 Project Structure
