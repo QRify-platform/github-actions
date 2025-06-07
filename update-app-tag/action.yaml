@@ -1,0 +1,41 @@
+name: "Update cluster-state image tag"
+description: "Updates the imageTag in values.yaml of cluster-state repo"
+inputs:
+  image-tag:
+    description: "New image tag to update"
+    required: true
+  github-token:
+    description: "Personal access token (PAT) to push to cluster-state"
+    required: true
+  cluster-repo:
+    description: "Repo to update (org/repo format)"
+    required: true
+  values-file-path:
+    description: "Path to the values.yaml file in cluster-state"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout cluster-state repo
+      uses: actions/checkout@v4
+      with:
+        repository: ${{ inputs.cluster-repo }}
+        token: ${{ inputs.github-token }}
+        path: cluster-state
+
+    - name: Update image tag
+      shell: bash
+      run: |
+        ./cluster-state/.github/actions/update-cluster-image-tag/update-tag.sh \
+          "${{ inputs.image-tag }}" \
+          "cluster-state/${{ inputs.values-file-path }}"
+
+    - name: Commit and push
+      shell: bash
+      run: |
+        cd cluster-state
+        git config user.name "qrify-bot"
+        git config user.email "qrify-bot@github.com"
+        git commit -am "ci: update imageTag to ${{ inputs.image-tag }}"
+        git push
