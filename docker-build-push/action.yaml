@@ -15,6 +15,11 @@ inputs:
     description: ECR registry URI (e.g. 1234567890.dkr.ecr.us-east-1.amazonaws.com)
     required: true
 
+outputs:
+  tag:
+    description: "The Docker image tag derived from the commit SHA"
+    value: ${{ steps.tag.outputs.tag }}
+
 runs:
   using: "composite"
   steps:
@@ -30,22 +35,22 @@ runs:
     - name: Set image tag from commit SHA
       id: tag
       shell: bash
-      run: echo "TAG=${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
+      run: echo "tag=${GITHUB_SHA::8}" >> "$GITHUB_OUTPUT"
 
     - name: Build Docker image
       shell: bash
       env:
         ECR_REGISTRY: ${{ inputs.ecr-registry }}
-        TAG: ${{ steps.tag.outputs.TAG }}
+        TAG: ${{ steps.tag.outputs.tag }}
       run: |
-        echo "Building image: $ECR_REGISTRY/${{ inputs.image-name }}:$TAG"
+        echo "📦 Building image: $ECR_REGISTRY/${{ inputs.image-name }}:$TAG"
         docker build -t $ECR_REGISTRY/${{ inputs.image-name }}:$TAG .
 
     - name: Push Docker image
       shell: bash
       env:
         ECR_REGISTRY: ${{ inputs.ecr-registry }}
-        TAG: ${{ steps.tag.outputs.TAG }}
+        TAG: ${{ steps.tag.outputs.tag }}
       run: |
-        echo "Pushing image to: $ECR_REGISTRY/${{ inputs.image-name }}:$TAG"
+        echo "🚀 Pushing image: $ECR_REGISTRY/${{ inputs.image-name }}:$TAG"
         docker push $ECR_REGISTRY/${{ inputs.image-name }}:$TAG
