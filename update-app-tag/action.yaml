@@ -24,12 +24,16 @@ runs:
         token: ${{ inputs.github-token }}
         path: cluster-state
 
+    - name: Download update-tag.sh
+      shell: bash
+      run: |
+        curl -sSL https://raw.githubusercontent.com/qrify-platform/github-actions/main/update-app-tag/update-tag.sh -o update-tag.sh
+        chmod +x update-tag.sh
+
     - name: Update image tag
       shell: bash
       run: |
-        bash ./update-tag.sh \
-          "${{ inputs.image-tag }}" \
-          "cluster-state/${{ inputs.values-file-path }}"
+        ./update-tag.sh "${{ inputs.image-tag }}" "cluster-state/${{ inputs.values-file-path }}"
 
     - name: Commit and push
       shell: bash
