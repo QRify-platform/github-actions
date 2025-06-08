@@ -27,7 +27,7 @@ runs:
     - name: Update image tag
       shell: bash
       run: |
-        ./cluster-state/.github/actions/update-cluster-image-tag/update-tag.sh \
+        bash ./update-tag.sh \
           "${{ inputs.image-tag }}" \
           "cluster-state/${{ inputs.values-file-path }}"
 
