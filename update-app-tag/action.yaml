@@ -41,5 +41,6 @@ runs:
         cd cluster-state
         git config user.name "qrify-bot"
         git config user.email "qrify-bot@github.com"
-        git commit -am "ci: update imageTag to ${{ inputs.image-tag }}"
+        git add ${{ inputs.values-file-path }}
+        git commit -m "ci: update imageTag to ${{ inputs.image-tag }}" || echo "No changes to commit"
         git push
