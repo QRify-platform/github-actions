@@ -2,6 +2,10 @@ name: Docker Build & Push to ECR
 description: Builds and pushes a Docker image to AWS ECR using the commit SHA as the tag.
 
 inputs:
+  build-args:
+    description: Optional Docker build arguments
+    required: false
+    default: ""
   image-name:
     description: Name of the ECR repository (e.g. qrify-web-dev)
     required: true
@@ -42,9 +46,10 @@ runs:
       env:
         ECR_REGISTRY: ${{ inputs.ecr-registry }}
         TAG: ${{ steps.tag.outputs.tag }}
+        BUILD_ARGS: ${{ inputs.build-args }}
       run: |
         echo "📦 Building image: $ECR_REGISTRY/${{ inputs.image-name }}:$TAG"
-        docker build -t $ECR_REGISTRY/${{ inputs.image-name }}:$TAG .
+        docker build $BUILD_ARGS -t $ECR_REGISTRY/${{ inputs.image-name }}:$TAG .
 
     - name: Push Docker image
       shell: bash
