@@ -24,10 +24,10 @@ runs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Configure AWS credentials from OIDC
-      uses: QRify-platform/github-actions/aws-oidc@main
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
       with:
-        aws-role-to-assume: ${{ inputs.aws-role-to-assume }}
+        role-to-assume: ${{ inputs.aws-role-to-assume }}
         aws-region: ${{ inputs.aws-region }}
 
     - name: Setup Terraform

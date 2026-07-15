@@ -18,11 +18,11 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Configure AWS credentials from OIDC
+    - name: Configure AWS credentials
       if: ${{ inputs.aws-role-to-assume != '' }}
-      uses: QRify-platform/github-actions/aws-oidc@main
+      uses: aws-actions/configure-aws-credentials@v4
       with:
-        aws-role-to-assume: ${{ inputs.aws-role-to-assume }}
+        role-to-assume: ${{ inputs.aws-role-to-assume }}
         aws-region: ${{ inputs.aws-region }}
 
     - name: Set up kubectl

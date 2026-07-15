@@ -6,7 +6,6 @@ Reusable **composite actions** for the QRify platform. App repos and infra workf
 
 | Action | Purpose |
 |---|---|
-| [`aws-oidc`](./aws-oidc) | Assume an IAM role via GitHub OIDC |
 | [`terraform-setup`](./terraform-setup) | Checkout + AWS OIDC + Terraform install + `init` |
 | [`eks-kubeconfig`](./eks-kubeconfig) | Install kubectl and point at EKS |
 | [`eks-drain-loadbalancers`](./eks-drain-loadbalancers) | Delete LB Services / wait for ELB ENIs before destroy |
