@@ -13,6 +13,18 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Require role ARN
+      shell: bash
+      env:
+        ROLE: ${{ inputs.aws-role-to-assume }}
+      run: |
+        set -euo pipefail
+        if [ -z "${ROLE}" ]; then
+          echo "::error::aws-role-to-assume is empty. On free GitHub orgs, org vars do not apply to private repos — set a repo variable or pass the ARN literally."
+          exit 1
+        fi
+        echo "Assuming role: ${ROLE}"
+
     - name: Configure AWS credentials from OIDC
       uses: aws-actions/configure-aws-credentials@v4
       with:
