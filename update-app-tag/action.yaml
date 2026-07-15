@@ -1,5 +1,6 @@
 name: "Update cluster-state image tag"
-description: "Updates the imageTag in values.yaml of cluster-state repo"
+description: "Updates the imageTag in a values file of the cluster-state repo and pushes the commit."
+
 inputs:
   image-tag:
     description: "New image tag to update"
@@ -24,23 +25,22 @@ runs:
         token: ${{ inputs.github-token }}
         path: cluster-state
 
-    - name: Download update-tag.sh
-      shell: bash
-      run: |
-        curl -sSL https://raw.githubusercontent.com/qrify-platform/github-actions/main/update-app-tag/update-tag.sh -o update-tag.sh
-        chmod +x update-tag.sh
-
     - name: Update image tag
       shell: bash
       run: |
-        ./update-tag.sh "${{ inputs.image-tag }}" "cluster-state/${{ inputs.values-file-path }}"
+        set -euo pipefail
+        chmod +x "${{ github.action_path }}/update-tag.sh"
+        "${{ github.action_path }}/update-tag.sh" \
+          "${{ inputs.image-tag }}" \
+          "cluster-state/${{ inputs.values-file-path }}"
 
     - name: Commit and push
       shell: bash
       run: |
+        set -euo pipefail
         cd cluster-state
         git config user.name "qrify-bot"
         git config user.email "qrify-bot@github.com"
-        git add ${{ inputs.values-file-path }}
+        git add "${{ inputs.values-file-path }}"
         git commit -m "ci: update imageTag to ${{ inputs.image-tag }}" || echo "No changes to commit"
         git push

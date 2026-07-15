@@ -1,42 +1,63 @@
 # QRify GitHub Actions
 
-This repository contains reusable **composite GitHub Actions** designed for the QRify Platform to support CI/CD workflows, cloud automation, and DevOps best practices.
+Reusable **composite actions** for the QRify platform. App repos and infra workflows call these so OIDC, Terraform, ECR, and EKS setup stay consistent.
 
-> These actions are meant to be consumed across the QRify platform's microservices and infrastructure repositories.
+## Actions
 
+| Action | Purpose |
+|---|---|
+| [`aws-oidc`](./aws-oidc) | Assume an IAM role via GitHub OIDC |
+| [`terraform-setup`](./terraform-setup) | Checkout + AWS OIDC + Terraform install + `init` |
+| [`eks-kubeconfig`](./eks-kubeconfig) | Install kubectl and point at EKS |
+| [`eks-drain-loadbalancers`](./eks-drain-loadbalancers) | Delete LB Services / wait for ELB ENIs before destroy |
+| [`docker-build-push`](./docker-build-push) | Build image and push to ECR (tag = short SHA) |
+| [`update-app-tag`](./update-app-tag) | Bump `imageTag` in `cluster-state` and push |
+| [`dispatch-and-wait`](./dispatch-and-wait) | `workflow_dispatch` another repo and wait for the run |
 
-
-## 🧱 Structure
-
-Each action is stored in its own folder with the following layout:
-
-```
-<action-name>/
-├── action.yml         # Composite action definition
-├── README.md          # Usage documentation
-└── other files        # (optional) scripts, templates, etc.
-```
-
----
-
-## 🧪 Example Usage
-
-In any QRify repo:
+## Example (app release)
 
 ```yaml
-- uses: QRify-platform/github-actions/docker-build-push-ecr@main
+- uses: actions/checkout@v4
+
+- uses: QRify-platform/github-actions/docker-build-push@main
+  id: build
   with:
     image-name: qrify-web-dev
+    aws-role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+    aws-region: us-east-2
+    ecr-registry: ${{ secrets.AWS_ECR_REGISTRY }}
+
+- uses: QRify-platform/github-actions/update-app-tag@main
+  with:
+    image-tag: ${{ steps.build.outputs.tag }}
+    github-token: ${{ secrets.CLUSTER_STATE_PAT }}
+    cluster-repo: QRify-platform/cluster-state
+    values-file-path: apps/qrify-web/values.dev.yaml
 ```
 
-> See the specific action folder for more usage examples and required environment variables.
+## Example (infra)
 
----
+```yaml
+- uses: QRify-platform/github-actions/terraform-setup@main
+  with:
+    aws-role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+    aws-region: us-east-2
 
-## ✅ Best Practices
+- run: terraform apply -auto-approve
+```
 
-- Keep actions modular and language-agnostic
-- Use [OpenID Connect](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect) for AWS authentication
-- Store secrets in GitHub org/repo settings and reference via `${{ secrets.NAME }}`
+## Conventions
 
+- Prefer **OIDC** over long-lived AWS keys (`permissions: id-token: write`)
+- Keep bash in action scripts (`*.sh`) and invoke via `${{ github.action_path }}`
+- Pin consumer workflows to `@main` (or a tag) for the org; bump deliberately when changing contracts
+- One folder per action: `action.yaml` + README (+ optional scripts)
 
+## Layout
+
+```text
+<action-name>/
+├── action.yaml
+├── README.md
+└── *.sh          # optional
+```

@@ -1,0 +1,45 @@
+name: Dispatch workflow and wait
+description: Trigger a workflow_dispatch on another repo and wait for the run to finish.
+
+inputs:
+  repository:
+    description: Target repo (org/name)
+    required: true
+  workflow:
+    description: Workflow file name or workflow name
+    required: true
+  ref:
+    description: Git ref to run against
+    required: false
+    default: main
+  github-token:
+    description: Token with actions:write on the target repo
+    required: true
+  settle-seconds:
+    description: Seconds to wait before resolving the new run id
+    required: false
+    default: "8"
+
+runs:
+  using: composite
+  steps:
+    - name: Dispatch and watch
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        REPO: ${{ inputs.repository }}
+        WORKFLOW: ${{ inputs.workflow }}
+        REF: ${{ inputs.ref }}
+        SETTLE: ${{ inputs.settle-seconds }}
+      run: |
+        set -euo pipefail
+        gh workflow run "$WORKFLOW" --repo "$REPO" --ref "$REF"
+        sleep "$SETTLE"
+        RUN_ID=$(gh run list \
+          --repo "$REPO" \
+          --workflow "$WORKFLOW" \
+          --limit 1 \
+          --json databaseId \
+          --jq '.[0].databaseId')
+        echo "Watching run ${RUN_ID} on ${REPO} (${WORKFLOW})"
+        gh run watch "$RUN_ID" --repo "$REPO" --exit-status
