@@ -32,22 +32,22 @@ These **must be defined in the calling workflow** at the job or step level:
 
 | Env Variable         | Required | Example                                               | Description                                             |
 |----------------------|----------|-------------------------------------------------------|---------------------------------------------------------|
-| `AWS_ROLE_TO_ASSUME` | ✅        | `arn:aws:iam::123456789012:role/github-actions-role` | The IAM role this workflow assumes using OIDC          |
+| `AWS_ECR_ROLE_TO_ASSUME` | ✅        | `arn:aws:iam::123456789012:role/QRifyECRPushRole` | The IAM role this workflow assumes using OIDC          |
 | `AWS_REGION`         | ✅        | `us-east-1`                                           | AWS region where your ECR registry is hosted           |
 | `ECR_REGISTRY`       | ✅        | `123456789012.dkr.ecr.us-east-1.amazonaws.com`        | Full domain of your ECR registry                       |
 
 ---
 
-## 🔐 Required GitHub Secrets
+## Required GitHub Variables
 
-These secrets should be defined in your GitHub repo or organization settings:
+Role ARNs and registry hostnames are not credentials — use **organization variables**:
 
-- `AWS_ROLE_TO_ASSUME`
-- `ECR_REGISTRY`
+- `AWS_ECR_ROLE_TO_ASSUME`
+- `AWS_ECR_REGISTRY`
 
 ---
 
-## 🧪 Example Workflow
+## Example Workflow
 
 ```yaml
 name: Release to Dev
@@ -59,18 +59,17 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    env:
-      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-      AWS_REGION: us-east-1
-      ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Build and push to ECR
-        uses: QRify-platform/github-actions/docker-build-push@v1
+        uses: QRify-platform/github-actions/docker-build-push@main
         with:
           image-name: qrify-web-dev
+          aws-role-to-assume: ${{ vars.AWS_ECR_ROLE_TO_ASSUME }}
+          aws-region: us-east-2
+          ecr-registry: ${{ vars.AWS_ECR_REGISTRY }}
 ```
 
 ---

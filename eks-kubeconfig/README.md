@@ -12,7 +12,7 @@ Installs kubectl and writes kubeconfig for an EKS cluster.
 # Or assume a role first:
 - uses: QRify-platform/github-actions/eks-kubeconfig@main
   with:
-    aws-role-to-assume: ${{ secrets.AWS_EKS_ROLE_TO_ASSUME }}
+    aws-role-to-assume: ${{ vars.AWS_EKS_ROLE_TO_ASSUME }}
     aws-region: us-east-2
     cluster-name: qrify-eks
 ```

@@ -23,9 +23,9 @@ Reusable **composite actions** for the QRify platform. App repos and infra workf
   id: build
   with:
     image-name: qrify-web-dev
-    aws-role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+    aws-role-to-assume: ${{ vars.AWS_ECR_ROLE_TO_ASSUME }}
     aws-region: us-east-2
-    ecr-registry: ${{ secrets.AWS_ECR_REGISTRY }}
+    ecr-registry: ${{ vars.AWS_ECR_REGISTRY }}
 
 - uses: QRify-platform/github-actions/update-app-tag@main
   with:
@@ -40,7 +40,7 @@ Reusable **composite actions** for the QRify platform. App repos and infra workf
 ```yaml
 - uses: QRify-platform/github-actions/terraform-setup@main
   with:
-    aws-role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+    aws-role-to-assume: ${{ vars.AWS_TF_ROLE_TO_ASSUME }}
     aws-region: us-east-2
 
 - run: terraform apply -auto-approve

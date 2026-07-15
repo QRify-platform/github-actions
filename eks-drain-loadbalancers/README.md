@@ -5,7 +5,7 @@ Removes Kubernetes LoadBalancer Services and waits for ELB ENIs before `terrafor
 ```yaml
 - uses: QRify-platform/github-actions/terraform-setup@main
   with:
-    aws-role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+    aws-role-to-assume: ${{ vars.AWS_TF_ROLE_TO_ASSUME }}
 
 # AWS creds already in the job — omit aws-role-to-assume
 - uses: QRify-platform/github-actions/eks-drain-loadbalancers@main
