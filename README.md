@@ -10,28 +10,55 @@ Reusable **composite actions** for the QRify platform. App repos and infra workf
 | [`eks-kubeconfig`](./eks-kubeconfig) | Install kubectl and point at EKS |
 | [`eks-drain-loadbalancers`](./eks-drain-loadbalancers) | Delete LB Services / wait for ELB ENIs before destroy |
 | [`docker-build-push`](./docker-build-push) | Build image and push to ECR (tag = short SHA) |
+| [`ecr-retag`](./ecr-retag) | Copy an existing ECR tag from one repo to another (promote) |
 | [`update-app-tag`](./update-app-tag) | Bump `imageTag` in `cluster-state` and push |
 | [`dispatch-and-wait`](./dispatch-and-wait) | `workflow_dispatch` another repo and wait for the run |
 
-## Example (app release)
+## Example (app release — build once, promote to prod)
+
+App repos use a single `release.yaml`: build → `*-dev` ECR + `values.dev.yaml`, then a `production` environment job retags the same SHA into `*-prod` and updates `values.prod.yaml`. Set required reviewers on the **production** GitHub Environment so promote waits for approval.
 
 ```yaml
-- uses: actions/checkout@v4
+jobs:
+  deploy-dev:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.build.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: build
+        uses: QRify-platform/github-actions/docker-build-push@main
+        with:
+          image-name: qrify-web-dev
+          aws-role-to-assume: ${{ vars.AWS_ECR_ROLE_TO_ASSUME }}
+          aws-region: us-east-2
+          ecr-registry: ${{ vars.AWS_ECR_REGISTRY }}
+      - uses: QRify-platform/github-actions/update-app-tag@main
+        with:
+          image-tag: ${{ steps.build.outputs.tag }}
+          github-token: ${{ secrets.CLUSTER_STATE_PAT }}
+          cluster-repo: QRify-platform/cluster-state
+          values-file-path: apps/qrify-web/values.dev.yaml
 
-- uses: QRify-platform/github-actions/docker-build-push@main
-  id: build
-  with:
-    image-name: qrify-web-dev
-    aws-role-to-assume: ${{ vars.AWS_ECR_ROLE_TO_ASSUME }}
-    aws-region: us-east-2
-    ecr-registry: ${{ vars.AWS_ECR_REGISTRY }}
-
-- uses: QRify-platform/github-actions/update-app-tag@main
-  with:
-    image-tag: ${{ steps.build.outputs.tag }}
-    github-token: ${{ secrets.CLUSTER_STATE_PAT }}
-    cluster-repo: QRify-platform/cluster-state
-    values-file-path: apps/qrify-web/values.dev.yaml
+  promote-prod:
+    needs: deploy-dev
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: QRify-platform/github-actions/ecr-retag@main
+        with:
+          source-image-name: qrify-web-dev
+          target-image-name: qrify-web-prod
+          image-tag: ${{ needs.deploy-dev.outputs.tag }}
+          aws-role-to-assume: ${{ vars.AWS_ECR_ROLE_TO_ASSUME }}
+          aws-region: us-east-2
+          ecr-registry: ${{ vars.AWS_ECR_REGISTRY }}
+      - uses: QRify-platform/github-actions/update-app-tag@main
+        with:
+          image-tag: ${{ needs.deploy-dev.outputs.tag }}
+          github-token: ${{ secrets.CLUSTER_STATE_PAT }}
+          cluster-repo: QRify-platform/cluster-state
+          values-file-path: apps/qrify-web/values.prod.yaml
 ```
 
 ## Example (infra)
@@ -51,6 +78,18 @@ Reusable **composite actions** for the QRify platform. App repos and infra workf
 - Keep bash in action scripts (`*.sh`) and invoke via `${{ github.action_path }}`
 - Pin consumer workflows to `@main` (or a tag) for the org; bump deliberately when changing contracts
 - One folder per action: `action.yaml` + README (+ optional scripts)
+
+## Organization variables (OIDC roles)
+
+Set these once from bootstrap outputs (`cd infra/bootstrap && terraform output`):
+
+| Variable | Bootstrap output | Used by |
+|---|---|---|
+| `AWS_TF_ROLE_TO_ASSUME` | `terraform_role_arn` | `infra` |
+| `AWS_ECR_ROLE_TO_ASSUME` | `ecr_push_role_arn` | app release workflows |
+| `AWS_EKS_ROLE_TO_ASSUME` | `eks_access_role_arn` | `cluster-state` Argo sync |
+| `AWS_SECRETS_ROLE_TO_ASSUME` | `secrets_role_arn` | `secrets-manager` |
+| `AWS_ECR_REGISTRY` | *(account).dkr.ecr.us-east-2.amazonaws.com* | app release workflows |
 
 ## Layout
 
