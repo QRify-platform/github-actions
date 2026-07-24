@@ -16,7 +16,7 @@ Reusable **composite actions** for the QRify platform. App repos and infra workf
 
 ## Example (app release — build once, promote to prod)
 
-App repos use a single `release.yaml`: push to `main` builds → `*-dev` ECR + `values.dev.yaml`. Prod promote is manual only (`workflow_dispatch`): same SHA retagged into `*-prod` and `values.prod.yaml`.
+App repos use a single `release.yaml`: push to `main` builds → `*-dev` ECR + `values.dev.yaml`, then `promote-prod` waits on the **production** GitHub Environment (required reviewers) before retagging the same SHA into `*-prod` + `values.prod.yaml`. Portal scaffold creates that environment automatically (`PROD_REVIEWER_LOGIN` / `PROD_REVIEWER_TEAM` org vars).
 
 ```yaml
 jobs:
@@ -42,7 +42,6 @@ jobs:
 
   promote-prod:
     needs: deploy-dev
-    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     environment: production
     steps:
