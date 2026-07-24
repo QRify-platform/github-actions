@@ -16,7 +16,7 @@ Reusable **composite actions** for the QRify platform. App repos and infra workf
 
 ## Example (app release — build once, promote to prod)
 
-App repos use a single `release.yaml`: build → `*-dev` ECR + `values.dev.yaml`, then a `production` environment job retags the same SHA into `*-prod` and updates `values.prod.yaml`. Set required reviewers on the **production** GitHub Environment so promote waits for approval.
+App repos use a single `release.yaml`: push to `main` builds → `*-dev` ECR + `values.dev.yaml`. Prod promote is manual only (`workflow_dispatch`): same SHA retagged into `*-prod` and `values.prod.yaml`.
 
 ```yaml
 jobs:
@@ -42,6 +42,7 @@ jobs:
 
   promote-prod:
     needs: deploy-dev
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     environment: production
     steps:
