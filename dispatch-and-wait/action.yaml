@@ -19,6 +19,12 @@ inputs:
     description: Seconds to wait before resolving the new run id
     required: false
     default: "8"
+  # Newline-separated key=value pairs passed as gh workflow run -f flags
+  # Example: promote_prod=false
+  fields:
+    description: Optional workflow_dispatch inputs (newline-separated key=value)
+    required: false
+    default: ""
 
 runs:
   using: composite
@@ -31,9 +37,17 @@ runs:
         WORKFLOW: ${{ inputs.workflow }}
         REF: ${{ inputs.ref }}
         SETTLE: ${{ inputs.settle-seconds }}
+        FIELDS: ${{ inputs.fields }}
       run: |
         set -euo pipefail
-        gh workflow run "$WORKFLOW" --repo "$REPO" --ref "$REF"
+        ARGS=(workflow run "$WORKFLOW" --repo "$REPO" --ref "$REF")
+        if [[ -n "${FIELDS}" ]]; then
+          while IFS= read -r line || [[ -n "${line}" ]]; do
+            [[ -z "${line}" || "${line}" =~ ^[[:space:]]*# ]] && continue
+            ARGS+=(-f "${line}")
+          done <<< "${FIELDS}"
+        fi
+        gh "${ARGS[@]}"
         sleep "$SETTLE"
         RUN_ID=$(gh run list \
           --repo "$REPO" \
