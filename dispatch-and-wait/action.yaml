@@ -1,5 +1,5 @@
 name: Dispatch workflow and wait
-description: Trigger a workflow_dispatch on another repo and wait for the run to finish.
+description: Trigger a workflow_dispatch on another repo and wait for the run (or a job) to finish.
 
 inputs:
   repository:
@@ -20,9 +20,13 @@ inputs:
     required: false
     default: "8"
   # Newline-separated key=value pairs passed as gh workflow run -f flags
-  # Example: promote_prod=false
   fields:
     description: Optional workflow_dispatch inputs (newline-separated key=value)
+    required: false
+    default: ""
+  # If set, return once this job succeeds (do not wait for later jobs e.g. promote-prod).
+  wait-for-job:
+    description: Optional job name/id to wait on instead of the full run
     required: false
     default: ""
 
@@ -38,6 +42,7 @@ runs:
         REF: ${{ inputs.ref }}
         SETTLE: ${{ inputs.settle-seconds }}
         FIELDS: ${{ inputs.fields }}
+        WAIT_JOB: ${{ inputs.wait-for-job }}
       run: |
         set -euo pipefail
         ARGS=(workflow run "$WORKFLOW" --repo "$REPO" --ref "$REF")
@@ -56,4 +61,43 @@ runs:
           --json databaseId \
           --jq '.[0].databaseId')
         echo "Watching run ${RUN_ID} on ${REPO} (${WORKFLOW})"
-        gh run watch "$RUN_ID" --repo "$REPO" --exit-status
+
+        if [[ -z "${WAIT_JOB}" ]]; then
+          gh run watch "$RUN_ID" --repo "$REPO" --exit-status
+          exit 0
+        fi
+
+        echo "Waiting only for job '${WAIT_JOB}' (later jobs may stay pending)"
+        while true; do
+          VIEW=$(gh run view "$RUN_ID" --repo "$REPO" --json status,conclusion,jobs)
+          RUN_STATUS=$(echo "$VIEW" | jq -r '.status')
+          RUN_CONCLUSION=$(echo "$VIEW" | jq -r '.conclusion // empty')
+          JOB_JSON=$(echo "$VIEW" | jq -c --arg n "$WAIT_JOB" '
+            .jobs[]? | select(.name == $n or .name == ($n | gsub("-"; " ")))
+          ' | head -n1)
+
+          if [[ -n "${JOB_JSON}" ]]; then
+            JOB_STATUS=$(echo "$JOB_JSON" | jq -r '.status')
+            JOB_CONCLUSION=$(echo "$JOB_JSON" | jq -r '.conclusion // empty')
+            echo "job=${WAIT_JOB} status=${JOB_STATUS} conclusion=${JOB_CONCLUSION:-none}"
+            if [[ "$JOB_STATUS" == "completed" ]]; then
+              if [[ "$JOB_CONCLUSION" == "success" ]]; then
+                echo "Job ${WAIT_JOB} succeeded; continuing without waiting for the rest of the run"
+                exit 0
+              fi
+              echo "Job ${WAIT_JOB} failed with conclusion=${JOB_CONCLUSION}"
+              exit 1
+            fi
+          else
+            echo "job=${WAIT_JOB} not started yet (run status=${RUN_STATUS})"
+          fi
+
+          if [[ "$RUN_STATUS" == "completed" ]]; then
+            if [[ "$RUN_CONCLUSION" == "success" ]]; then
+              exit 0
+            fi
+            echo "Run completed before job ${WAIT_JOB} succeeded (conclusion=${RUN_CONCLUSION})"
+            exit 1
+          fi
+          sleep 15
+        done
