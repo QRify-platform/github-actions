@@ -64,7 +64,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build and push to ECR
-        uses: QRify-platform/github-actions/docker-build-push@main
+        uses: QRify-platform/github-actions/docker-build-push@v1.0.0
         with:
           image-name: qrify-web-dev
           aws-role-to-assume: ${{ vars.AWS_ECR_ROLE_TO_ASSUME }}

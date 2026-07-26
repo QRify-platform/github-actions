@@ -21,7 +21,7 @@ runs:
   using: composite
   steps:
     - name: Configure kubectl for EKS
-      uses: QRify-platform/github-actions/eks-kubeconfig@main
+      uses: QRify-platform/github-actions/eks-kubeconfig@v1.0.0
       with:
         aws-role-to-assume: ${{ inputs.aws-role-to-assume }}
         aws-region: ${{ inputs.aws-region }}

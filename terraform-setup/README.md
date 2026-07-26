@@ -3,7 +3,7 @@
 Prepares a job to run Terraform against the QRify managed stack.
 
 ```yaml
-- uses: QRify-platform/github-actions/terraform-setup@main
+- uses: QRify-platform/github-actions/terraform-setup@v1.0.0
   with:
     aws-role-to-assume: ${{ vars.AWS_TF_ROLE_TO_ASSUME }}
     aws-region: us-east-2

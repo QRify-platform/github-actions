@@ -27,13 +27,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: build
-        uses: QRify-platform/github-actions/docker-build-push@main
+        uses: QRify-platform/github-actions/docker-build-push@v1.0.0
         with:
           image-name: qrify-web-dev
           aws-role-to-assume: ${{ vars.AWS_ECR_ROLE_TO_ASSUME }}
           aws-region: us-east-2
           ecr-registry: ${{ vars.AWS_ECR_REGISTRY }}
-      - uses: QRify-platform/github-actions/update-app-tag@main
+      - uses: QRify-platform/github-actions/update-app-tag@v1.0.0
         with:
           image-tag: ${{ steps.build.outputs.tag }}
           github-token: ${{ secrets.CLUSTER_STATE_PAT }}
@@ -45,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - uses: QRify-platform/github-actions/ecr-retag@main
+      - uses: QRify-platform/github-actions/ecr-retag@v1.0.0
         with:
           source-image-name: qrify-web-dev
           target-image-name: qrify-web-prod
@@ -53,7 +53,7 @@ jobs:
           aws-role-to-assume: ${{ vars.AWS_ECR_ROLE_TO_ASSUME }}
           aws-region: us-east-2
           ecr-registry: ${{ vars.AWS_ECR_REGISTRY }}
-      - uses: QRify-platform/github-actions/update-app-tag@main
+      - uses: QRify-platform/github-actions/update-app-tag@v1.0.0
         with:
           image-tag: ${{ needs.deploy-dev.outputs.tag }}
           github-token: ${{ secrets.CLUSTER_STATE_PAT }}
@@ -64,7 +64,7 @@ jobs:
 ## Example (infra)
 
 ```yaml
-- uses: QRify-platform/github-actions/terraform-setup@main
+- uses: QRify-platform/github-actions/terraform-setup@v1.0.0
   with:
     aws-role-to-assume: ${{ vars.AWS_TF_ROLE_TO_ASSUME }}
     aws-region: us-east-2
@@ -76,7 +76,7 @@ jobs:
 
 - Prefer **OIDC** over long-lived AWS keys (`permissions: id-token: write`)
 - Keep bash in action scripts (`*.sh`) and invoke via `${{ github.action_path }}`
-- Pin consumer workflows to `@main` (or a tag) for the org; bump deliberately when changing contracts
+- Pin consumer workflows to a **version tag** (e.g. `@v1.0.0`) or commit SHA; bump deliberately when changing contracts. Avoid `@main` in production workflows.
 - One folder per action: `action.yaml` + README (+ optional scripts)
 
 ## Organization variables (OIDC roles)

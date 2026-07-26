@@ -12,7 +12,7 @@ This GitHub **composite action** updates the `imageTag` field in a `values.yaml`
 
 ```yaml
 - name: Update image tag in cluster-state
-  uses: QRify-platform/github-actions/update-app-tag@main
+  uses: QRify-platform/github-actions/update-app-tag@v1.0.0
   with:
     image-tag: ${{ steps.build.outputs.tag }}         # e.g. commit SHA or semver
     github-token: ${{ secrets.CLUSTER_STATE_PAT }}    # Personal Access Token with write access
